@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: billun_user
+      POSTGRES_PASSWORD: billun_secure_password_2024
+      POSTGRES_DB: billun_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - billun_network
+
+  backend:
+    build: ./backend
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://billun_user:billun_secure_password_2024@db:5432/billun_db
+      - SECRET_KEY=votre_super_secret_key_production_2024_changez_moi
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+    networks:
+      - billun_network
+
+  frontend:
+    build: ./frontend
+    restart: always
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXTAUTH_SECRET=votre_secret_jwt_super_securise_changez_moi
+      - NEXTAUTH_URL=http://localhost:3001
+    depends_on:
+      - backend
+    ports:
+      - "3001:3000"
+    networks:
+      - billun_network
+
+volumes:
+  postgres_data:
+
+networks:
+  billun_network:
+    driver: bridge
