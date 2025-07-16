@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: billun_user
+      POSTGRES_PASSWORD: billun_secure_password_2024
+      POSTGRES_DB: billun_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Optimisation mémoire pour PostgreSQL sur VPS budget
+    command: >
+      postgres 
+      -c shared_buffers=128MB
+      -c effective_cache_size=512MB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+    # Limitation mémoire
+    deploy:
+      resources:
+        limits:
+          memory: 400M
+        reservations:
+          memory: 200M
+    networks:
+      - billun_network
+
+  backend:
+    build: ./backend
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://billun_user:billun_secure_password_2024@db:5432/billun_db
+      - SECRET_KEY=votre_super_secret_key_production_2024_changez_moi
+      - WORKERS=1
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+    # Limitation mémoire pour VPS budget
+    deploy:
+      resources:
+        limits:
+          memory: 600M
+        reservations:
+          memory: 300M
+    networks:
+      - billun_network
+
+  frontend:
+    build: ./frontend
+    restart: always
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXTAUTH_SECRET=votre_secret_jwt_super_securise_changez_moi
+      - NEXTAUTH_URL=http://localhost:3001
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    ports:
+      - "3001:3000"
+    # Limitation mémoire pour VPS budget
+    deploy:
+      resources:
+        limits:
+          memory: 600M
+        reservations:
+          memory: 300M
+    networks:
+      - billun_network
+
+volumes:
+  postgres_data:
+
+networks:
+  billun_network:
+    driver: bridge

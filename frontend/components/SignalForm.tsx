@@ -5,26 +5,19 @@ import api from "@/utils/api";
 
 interface Signal {
   id?: number;
-  titre: string;
+  materiel_id: number;
   description: string;
-  type_signal: string;
-  priorite: string;
-  statut: string;
-  date_creation?: string;
-  materiel_id?: number;
-  user_id?: number;
+  photo_url?: string;
+  date_signalement?: string;
 }
 
 export default function SignalForm() {
   const [signals, setSignals] = useState<Signal[]>([]);
   const [materials, setMaterials] = useState<any[]>([]);
   const [formData, setFormData] = useState<Signal>({
-    titre: "",
+    materiel_id: 0,
     description: "",
-    type_signal: "",
-    priorite: "moyenne",
-    statut: "ouvert",
-    materiel_id: undefined,
+    photo_url: "",
   });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -54,19 +47,39 @@ export default function SignalForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation côté client
+    if (formData.materiel_id === 0) {
+      alert("Veuillez sélectionner un matériel");
+      return;
+    }
+    
+    if (!formData.description.trim()) {
+      alert("Veuillez saisir une description");
+      return;
+    }
+    
     setLoading(true);
 
     try {
+      // Préparer les données à envoyer (ne pas envoyer photo_url si vide)
+      const dataToSend = {
+        materiel_id: formData.materiel_id,
+        description: formData.description.trim(),
+        ...(formData.photo_url && formData.photo_url.trim() && { photo_url: formData.photo_url.trim() })
+      };
+      
       if (editingId) {
-        await api.put(`/anomalies/${editingId}`, formData);
+        await api.put(`/anomalies/${editingId}`, dataToSend);
       } else {
-        await api.post("/anomalies/", formData);
+        await api.post("/anomalies/", dataToSend);
       }
       
       resetForm();
       fetchSignals();
     } catch (error) {
       console.error("Erreur lors de la sauvegarde:", error);
+      alert("Erreur lors de l'enregistrement. Veuillez vérifier les données saisies.");
     } finally {
       setLoading(false);
     }
@@ -90,12 +103,9 @@ export default function SignalForm() {
 
   const resetForm = () => {
     setFormData({
-      titre: "",
+      materiel_id: 0,
       description: "",
-      type_signal: "",
-      priorite: "moyenne",
-      statut: "ouvert",
-      materiel_id: undefined,
+      photo_url: "",
     });
     setEditingId(null);
   };
@@ -111,92 +121,39 @@ export default function SignalForm() {
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Titre
-            </label>
-            <input
-              type="text"
-              value={formData.titre}
-              onChange={(e) => setFormData({ ...formData, titre: e.target.value })}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Type de signalement
+              Matériel concerné *
             </label>
             <select
-              value={formData.type_signal}
-              onChange={(e) => setFormData({ ...formData, type_signal: e.target.value })}
+              value={formData.materiel_id}
+              onChange={(e) => setFormData({ ...formData, materiel_id: parseInt(e.target.value) })}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               required
             >
-              <option value="">Sélectionner un type</option>
-              <option value="panne">Panne</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="accident">Accident</option>
-              <option value="probleme_technique">Problème technique</option>
-              <option value="autre">Autre</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Priorité
-            </label>
-            <select
-              value={formData.priorite}
-              onChange={(e) => setFormData({ ...formData, priorite: e.target.value })}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="basse">Basse</option>
-              <option value="moyenne">Moyenne</option>
-              <option value="haute">Haute</option>
-              <option value="critique">Critique</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Statut
-            </label>
-            <select
-              value={formData.statut}
-              onChange={(e) => setFormData({ ...formData, statut: e.target.value })}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="ouvert">Ouvert</option>
-              <option value="en_cours">En cours</option>
-              <option value="resolu">Résolu</option>
-              <option value="ferme">Fermé</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Matériel concerné (optionnel)
-            </label>
-            <select
-              value={formData.materiel_id || ""}
-              onChange={(e) => setFormData({ 
-                ...formData, 
-                materiel_id: e.target.value ? parseInt(e.target.value) : undefined 
-              })}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Aucun matériel spécifique</option>
+              <option value={0}>Sélectionner un matériel</option>
               {materials.map((material) => (
                 <option key={material.id} value={material.id}>
-                  {material.nom} - {material.marque} {material.modele}
+                  {material.identifiant} - {material.type_materiel} ({material.plaque})
                 </option>
               ))}
             </select>
           </div>
           
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              URL Photo (optionnel)
+            </label>
+            <input
+              type="url"
+              value={formData.photo_url || ""}
+              onChange={(e) => setFormData({ ...formData, photo_url: e.target.value })}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              placeholder="https://example.com/photo.jpg"
+            />
+          </div>
+          
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description
+              Description de l'anomalie *
             </label>
             <textarea
               value={formData.description}
@@ -204,6 +161,7 @@ export default function SignalForm() {
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               rows={4}
               required
+              placeholder="Décrivez l'anomalie détectée..."
             />
           </div>
           
@@ -213,7 +171,7 @@ export default function SignalForm() {
               disabled={loading}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
-              {loading ? "Enregistrement..." : editingId ? "Modifier" : "Créer"}
+              {loading ? "Enregistrement..." : editingId ? "Modifier" : "Signaler l'anomalie"}
             </button>
             
             {editingId && (
@@ -232,7 +190,7 @@ export default function SignalForm() {
       {/* Liste des signalements */}
       <div className="bg-white rounded-lg shadow">
         <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold">Liste des signalements</h3>
+          <h3 className="text-lg font-semibold">Anomalies signalées</h3>
         </div>
         
         <div className="overflow-x-auto">
@@ -240,19 +198,16 @@ export default function SignalForm() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Titre
+                  ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Type
+                  Matériel
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Priorité
+                  Description
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Statut
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Date
+                  Date de signalement
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Actions
@@ -263,39 +218,16 @@ export default function SignalForm() {
               {signals.map((signal) => (
                 <tr key={signal.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {signal.titre}
+                    #{signal.id}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {signal.type_signal}
+                    {materials.find(m => m.id === signal.materiel_id)?.identifiant || `ID: ${signal.materiel_id}`}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      signal.priorite === 'critique' 
-                        ? 'bg-red-100 text-red-800' 
-                        : signal.priorite === 'haute'
-                        ? 'bg-orange-100 text-orange-800'
-                        : signal.priorite === 'moyenne'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-green-100 text-green-800'
-                    }`}>
-                      {signal.priorite}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      signal.statut === 'resolu' 
-                        ? 'bg-green-100 text-green-800' 
-                        : signal.statut === 'en_cours'
-                        ? 'bg-blue-100 text-blue-800'
-                        : signal.statut === 'ferme'
-                        ? 'bg-gray-100 text-gray-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {signal.statut}
-                    </span>
+                  <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                    {signal.description}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {signal.date_creation ? new Date(signal.date_creation).toLocaleDateString() : '-'}
+                    {signal.date_signalement ? new Date(signal.date_signalement).toLocaleDateString() : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                     <button

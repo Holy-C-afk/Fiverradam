@@ -9,11 +9,28 @@
 - **OS** : Ubuntu 20.04+ ou Debian 11+
 - **Bande passante** : Illimitée ou minimum 1TB/mois
 
-### Fournisseurs VPS recommandés :
-- **DigitalOcean** : $12/mois (2GB RAM, 2 vCPU, 50GB SSD)
-- **Vultr** : $10/mois (2GB RAM, 1 vCPU, 55GB SSD)
-- **Linode** : $12/mois (2GB RAM, 1 vCPU, 50GB SSD)
-- **OVH** : €6/mois (2GB RAM, 1 vCPU, 20GB SSD)
+### Fournisseurs VPS recommandés (Budget ≤ 5€/mois) :
+
+#### **🥇 Top Recommandations Budget :**
+- **Contabo** : **€4.99/mois** (4GB RAM, 2 vCPU, 50GB SSD) - ⭐ Meilleur rapport qualité/prix
+- **IONOS** : **€1/mois** les 6 premiers mois puis €4/mois (1GB RAM, 1 vCPU, 10GB SSD)
+- **Hostinger** : **€3.99/mois** (1GB RAM, 1 vCPU, 20GB SSD)
+- **OVH VPS Starter** : **€3.50/mois** (2GB RAM, 1 vCPU, 20GB SSD)
+
+#### **🥈 Alternatives Budget :**
+- **Vultr Regular** : **$3.50/mois** (512MB RAM, 1 vCPU, 10GB SSD) - Minimum pour Billun
+- **DigitalOcean Basic** : **$4/mois** (512MB RAM, 1 vCPU, 10GB SSD)
+- **Hetzner Cloud** : **€3.29/mois** (2GB RAM, 1 vCPU, 20GB SSD)
+- **PulseHeberg** : **€2.99/mois** (1GB RAM, 1 vCPU, 15GB SSD) - Français
+
+#### **🏆 RECOMMANDATION SPÉCIALE :**
+**Contabo VPS S** - €4.99/mois est le meilleur choix car :
+- ✅ 4GB RAM (largement suffisant pour Billun)
+- ✅ 2 vCPU (bonnes performances)
+- ✅ 50GB SSD NVMe (rapide)
+- ✅ Bande passante illimitée
+- ✅ Support 24/7
+- ✅ Datacenters en Europe
 
 ## 🚀 Étapes de Déploiement
 

@@ -1,47 +1,72 @@
 // components/MaterialForm.tsx
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import api from "@/utils/api";
 
 interface Material {
   id?: number;
-  nom: string;
+  identifiant: string;
+  plaque: string;
   type_materiel: string;
-  marque: string;
-  modele: string;
-  numero_serie: string;
-  date_acquisition: string;
   statut: string;
-  description?: string;
+  kilometrage?: number;
+  date_controle_technique?: string;
+  options?: string;
+  responsable_id?: number;
 }
 
 export default function MaterialForm() {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [formData, setFormData] = useState<Material>({
-    nom: "",
+    identifiant: "",
+    plaque: "",
     type_materiel: "",
-    marque: "",
-    modele: "",
-    numero_serie: "",
-    date_acquisition: "",
-    statut: "actif",
-    description: "",
+    statut: "disponible",
+    kilometrage: 0,
+    date_controle_technique: "",
+    options: "",
+    responsable_id: undefined,
   });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<string>("");
 
-  useEffect(() => {
-    fetchMaterials();
-  }, []);
-
-  const fetchMaterials = async () => {
+  // Fonction pour récupérer les matériels
+  const fetchMaterials = useCallback(async () => {
     try {
       const response = await api.get("/materiels/");
       setMaterials(response.data);
     } catch (error) {
       console.error("Erreur lors du chargement du matériel:", error);
     }
-  };
+  }, []);
+
+  // Fonction pour vérifier les mises à jour automatiques
+  const checkForUpdates = useCallback(async () => {
+    try {
+      const response = await api.get("/materiels/events");
+      const newUpdate = response.data.last_update;
+      
+      if (lastUpdate && newUpdate !== lastUpdate) {
+        // Il y a eu une mise à jour, recharger les données
+        await fetchMaterials();
+      }
+      
+      setLastUpdate(newUpdate);
+    } catch (error) {
+      console.error("Erreur lors de la vérification des mises à jour:", error);
+    }
+  }, [lastUpdate, fetchMaterials]);
+
+  useEffect(() => {
+    fetchMaterials();
+  }, [fetchMaterials]);
+
+  // Polling pour les mises à jour automatiques toutes les 2 secondes
+  useEffect(() => {
+    const interval = setInterval(checkForUpdates, 2000);
+    return () => clearInterval(interval);
+  }, [checkForUpdates]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,20 +76,39 @@ export default function MaterialForm() {
       if (editingId) {
         await api.put(`/materiels/${editingId}`, formData);
       } else {
-        await api.post("/materiels/", formData);
+        const response = await api.post("/materiels/", formData);
+        if (response.data.created) {
+          // Material créé avec succès, mise à jour immédiate
+          await fetchMaterials();
+        }
       }
       
       resetForm();
-      fetchMaterials();
-    } catch (error) {
+      if (!editingId) {
+        // Force refresh for new materials
+        await fetchMaterials();
+      }
+    } catch (error: any) {
       console.error("Erreur lors de la sauvegarde:", error);
+      if (error.response?.data?.detail) {
+        alert("Erreur: " + error.response.data.detail);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleEdit = (material: Material) => {
-    setFormData(material);
+    setFormData({
+      identifiant: material.identifiant,
+      plaque: material.plaque,
+      type_materiel: material.type_materiel,
+      statut: material.statut,
+      kilometrage: material.kilometrage || 0,
+      date_controle_technique: material.date_controle_technique || "",
+      options: material.options || "",
+      responsable_id: material.responsable_id || undefined,
+    });
     setEditingId(material.id || null);
   };
 
@@ -72,7 +116,7 @@ export default function MaterialForm() {
     if (confirm("Êtes-vous sûr de vouloir supprimer ce matériel ?")) {
       try {
         await api.delete(`/materiels/${id}`);
-        fetchMaterials();
+        await fetchMaterials();
       } catch (error) {
         console.error("Erreur lors de la suppression:", error);
       }
@@ -81,14 +125,14 @@ export default function MaterialForm() {
 
   const resetForm = () => {
     setFormData({
-      nom: "",
+      identifiant: "",
+      plaque: "",
       type_materiel: "",
-      marque: "",
-      modele: "",
-      numero_serie: "",
-      date_acquisition: "",
-      statut: "actif",
-      description: "",
+      statut: "disponible",
+      kilometrage: 0,
+      date_controle_technique: "",
+      options: "",
+      responsable_id: undefined,
     });
     setEditingId(null);
   };
@@ -104,12 +148,25 @@ export default function MaterialForm() {
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nom
+              Identifiant
             </label>
             <input
               type="text"
-              value={formData.nom}
-              onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+              value={formData.identifiant}
+              onChange={(e) => setFormData({ ...formData, identifiant: e.target.value })}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Plaque d'immatriculation
+            </label>
+            <input
+              type="text"
+              value={formData.plaque}
+              onChange={(e) => setFormData({ ...formData, plaque: e.target.value })}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -126,63 +183,12 @@ export default function MaterialForm() {
               required
             >
               <option value="">Sélectionner un type</option>
-              <option value="camion">Camion</option>
-              <option value="remorque">Remorque</option>
-              <option value="equipement">Équipement</option>
-              <option value="outil">Outil</option>
+              <option value="CAMION">Camion</option>
+              <option value="REMORQUE">Remorque</option>
+              <option value="VOITURE">Voiture</option>
+              <option value="EQUIPEMENT">Équipement</option>
+              <option value="OUTIL">Outil</option>
             </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Marque
-            </label>
-            <input
-              type="text"
-              value={formData.marque}
-              onChange={(e) => setFormData({ ...formData, marque: e.target.value })}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Modèle
-            </label>
-            <input
-              type="text"
-              value={formData.modele}
-              onChange={(e) => setFormData({ ...formData, modele: e.target.value })}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Numéro de série
-            </label>
-            <input
-              type="text"
-              value={formData.numero_serie}
-              onChange={(e) => setFormData({ ...formData, numero_serie: e.target.value })}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Date d'acquisition
-            </label>
-            <input
-              type="date"
-              value={formData.date_acquisition}
-              onChange={(e) => setFormData({ ...formData, date_acquisition: e.target.value })}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              required
-            />
           </div>
           
           <div>
@@ -194,19 +200,45 @@ export default function MaterialForm() {
               onChange={(e) => setFormData({ ...formData, statut: e.target.value })}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
-              <option value="actif">Actif</option>
-              <option value="maintenance">En maintenance</option>
-              <option value="retire">Retiré</option>
+              <option value="disponible">Disponible</option>
+              <option value="en_service">En service</option>
+              <option value="en_maintenance">En maintenance</option>
+              <option value="hors_service">Hors service</option>
             </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Kilométrage
+            </label>
+            <input
+              type="number"
+              value={formData.kilometrage || 0}
+              onChange={(e) => setFormData({ ...formData, kilometrage: parseInt(e.target.value) || 0 })}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              min="0"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Date de contrôle technique
+            </label>
+            <input
+              type="date"
+              value={formData.date_controle_technique || ""}
+              onChange={(e) => setFormData({ ...formData, date_controle_technique: e.target.value })}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
           </div>
           
           <div className="md:col-span-2 lg:col-span-3">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description
+              Options / Notes
             </label>
             <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              value={formData.options || ""}
+              onChange={(e) => setFormData({ ...formData, options: e.target.value })}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               rows={3}
             />
@@ -237,7 +269,10 @@ export default function MaterialForm() {
       {/* Liste du matériel */}
       <div className="bg-white rounded-lg shadow">
         <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold">Liste du matériel</h3>
+          <h3 className="text-lg font-semibold">Liste du matériel ({materials.length})</h3>
+          <p className="text-sm text-gray-500 mt-1">
+            Dernière mise à jour: {lastUpdate ? new Date(lastUpdate).toLocaleString() : "En attente..."}
+          </p>
         </div>
         
         <div className="overflow-x-auto">
@@ -245,19 +280,19 @@ export default function MaterialForm() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Nom
+                  Identifiant
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Plaque
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Type
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Marque/Modèle
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  N° Série
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Statut
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Kilométrage
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Actions
@@ -268,27 +303,29 @@ export default function MaterialForm() {
               {materials.map((material) => (
                 <tr key={material.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {material.nom}
+                    {material.identifiant}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {material.plaque}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {material.type_materiel}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {material.marque} {material.modele}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {material.numero_serie}
-                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      material.statut === 'actif' 
+                      material.statut === 'disponible' 
                         ? 'bg-green-100 text-green-800' 
-                        : material.statut === 'maintenance'
+                        : material.statut === 'en_service'
+                        ? 'bg-blue-100 text-blue-800'
+                        : material.statut === 'en_maintenance'
                         ? 'bg-yellow-100 text-yellow-800'
                         : 'bg-red-100 text-red-800'
                     }`}>
-                      {material.statut}
+                      {material.statut.replace('_', ' ')}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {material.kilometrage || 0} km
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                     <button
@@ -306,6 +343,13 @@ export default function MaterialForm() {
                   </td>
                 </tr>
               ))}
+              {materials.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                    Aucun matériel trouvé
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

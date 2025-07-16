@@ -17,9 +17,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Health check endpoint
+@app.get("/")
+def read_root():
+    return {"message": "Billun Backend API is running!", "status": "healthy"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "api": "Billun Backend", "version": "1.0.0"}
+
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(materiels.router)
 app.include_router(anomalies.router)
 app.include_router(stats.router)
-app.include_router(contact.router) 
+app.include_router(contact.router)
