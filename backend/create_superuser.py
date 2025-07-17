@@ -26,10 +26,10 @@ def create_superuser():
     # Create database connection
     engine = create_engine(DATABASE_URL)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    
-    # Create tables if they don't exist
+
+    # Crée les tables AVANT toute requête
     Base.metadata.create_all(bind=engine)
-    
+
     db = SessionLocal()
     
     try:
@@ -50,8 +50,7 @@ def create_superuser():
             hashed_password=hashed_password,
             nom="Super",
             prenom="Mobilun",
-            role="admin",
-            is_active=True
+            role="admin"
         )
         
         db.add(superuser)
@@ -75,6 +74,10 @@ def create_superuser():
 def create_admin(email, password, nom, prenom, role="admin"):
     engine = create_engine(DATABASE_URL)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+    # Crée les tables AVANT toute requête
+    Base.metadata.create_all(bind=engine)
+
     db = SessionLocal()
     try:
         existing = db.query(User).filter(User.email == email).first()
@@ -87,8 +90,7 @@ def create_admin(email, password, nom, prenom, role="admin"):
             hashed_password=hashed_password,
             nom=nom,
             prenom=prenom,
-            role=role,
-            is_active=True
+            role=role
         )
         db.add(admin)
         db.commit()

@@ -1,11 +1,18 @@
+# Use a lightweight Python image
 FROM python:3.11-slim
 
+# Set working directory
 WORKDIR /app
 
-COPY ./app /app/app
-COPY requirements.txt /app/requirements.txt
-COPY create_superuser.py /app/create_superuser.py
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
+# Copy app code
+COPY . .
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"] 
+# Expose FastAPI default port
+EXPOSE 8000
+
+# Start FastAPI with Uvicorn, binding to 0.0.0.0
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

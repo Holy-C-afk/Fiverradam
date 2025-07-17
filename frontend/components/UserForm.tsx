@@ -5,19 +5,23 @@ import api from "@/utils/api";
 
 interface User {
   id?: number;
-  username: string;
   email: string;
-  full_name: string;
-  is_active: boolean;
+  nom: string;
+  prenom: string;
+  société?: string;
+  téléphone?: string;
+  role?: string;
 }
 
 export default function UserForm() {
   const [users, setUsers] = useState<User[]>([]);
   const [formData, setFormData] = useState<User>({
-    username: "",
     email: "",
-    full_name: "",
-    is_active: true,
+    nom: "",
+    prenom: "",
+    société: "",
+    téléphone: "",
+    role: "user",
   });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -40,10 +44,22 @@ export default function UserForm() {
     setLoading(true);
 
     try {
+      const payload = {
+        nom_utilisateur: formData.nom ? formData.nom : formData.email,
+        email: formData.email,
+        nom_complet: formData.nom + (formData.prenom ? ' ' + formData.prenom : ''),
+        utilisateur_actif: true,
+        nom: formData.nom,
+        prenom: formData.prenom,
+        société: formData.société,
+        téléphone: formData.téléphone,
+        role: formData.role || "user",
+        password: "temporary123"
+      };
       if (editingId) {
-        await api.put(`/users/${editingId}`, formData);
+        await api.put(`/users/${editingId}`, payload);
       } else {
-        await api.post("/users/", { ...formData, password: "temporary123" });
+        await api.post("/users/", payload);
       }
       
       resetForm();
@@ -73,10 +89,12 @@ export default function UserForm() {
 
   const resetForm = () => {
     setFormData({
-      username: "",
       email: "",
-      full_name: "",
-      is_active: true,
+      nom: "",
+      prenom: "",
+      société: "",
+      téléphone: "",
+      role: "user",
     });
     setEditingId(null);
   };
@@ -92,12 +110,25 @@ export default function UserForm() {
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nom d'utilisateur
+              Nom
             </label>
             <input
               type="text"
-              value={formData.username}
-              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+              value={formData.nom}
+              onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Prénom
+            </label>
+            <input
+              type="text"
+              value={formData.prenom}
+              onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -118,27 +149,40 @@ export default function UserForm() {
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nom complet
+              Société
             </label>
             <input
               type="text"
-              value={formData.full_name}
-              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+              value={formData.société}
+              onChange={(e) => setFormData({ ...formData, société: e.target.value })}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              required
             />
           </div>
           
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              checked={formData.is_active}
-              onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-              className="mr-2"
-            />
-            <label className="text-sm font-medium text-gray-700">
-              Utilisateur actif
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Téléphone
             </label>
+            <input
+              type="text"
+              value={formData.téléphone}
+              onChange={(e) => setFormData({ ...formData, téléphone: e.target.value })}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Rôle
+            </label>
+            <select
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="user">Utilisateur</option>
+              <option value="admin">Administrateur</option>
+            </select>
           </div>
           
           <div className="md:col-span-2 flex gap-2">
@@ -174,16 +218,16 @@ export default function UserForm() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Nom d'utilisateur
+                  Nom
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Prénom
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Email
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Nom complet
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Statut
+                  Rôle
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Actions
@@ -194,22 +238,16 @@ export default function UserForm() {
               {users.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {user.username}
+                    {user.nom}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {user.prenom}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {user.email}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {user.full_name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      user.is_active 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {user.is_active ? 'Actif' : 'Inactif'}
-                    </span>
+                    {user.role}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                     <button

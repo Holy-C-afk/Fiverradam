@@ -25,7 +25,7 @@ class UserCreate(BaseModel):
     email: str
     password: str
     nom: Optional[str] = None
-    prénom: Optional[str] = None
+    prenom: Optional[str] = None
     role: str = "user"
     société: Optional[str] = None
     téléphone: Optional[str] = None
@@ -36,7 +36,7 @@ class UserResponse(BaseModel):
     id: int
     email: str
     nom: str = ""
-    prénom: str = ""
+    prenom: str = ""
     role: str
     société: str = ""
     téléphone: str = ""
@@ -104,7 +104,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
         email=user.email,
         hashed_password=hashed_password,
         nom=user.nom,
-        prénom=user.prénom,
+        prenom=user.prenom,
         role=user.role,
         société=user.société,
         téléphone=user.téléphone
@@ -136,7 +136,7 @@ def create_admin_user(user: UserCreate, db: Session = Depends(get_db)):
         email=user.email,
         hashed_password=hashed_password,
         nom=user.nom if user.nom is not None else "",
-        prénom=user.prénom if user.prénom is not None else "",
+        prenom=user.prenom if user.prenom is not None else "",
         role="admin",
         société=user.société if user.société is not None else "",
         téléphone=user.téléphone if user.téléphone is not None else ""

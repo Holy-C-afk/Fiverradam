@@ -1,7 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 
-from .database import engine
+from .database import engine, get_db
 from . import models
 from .routers import auth, users, materiels, anomalies, stats, contact
 
@@ -18,6 +19,22 @@ app.add_middleware(
 )
 
 # Health check endpoint
+
+@app.post("/create-admin")
+def create_admin(db: Session = Depends(get_db)):
+    from models import User
+    from utils import get_password_hash  # selon ton projet
+    hashed_password = get_password_hash("admin123")
+    user = User(
+        username="admin",
+        email="admin@demo.com",
+        hashed_password=hashed_password,
+        is_admin=True
+    )
+    db.add(user)
+    db.commit()
+    return {"message": "Admin created"}
+
 @app.get("/")
 def read_root():
     return {"message": "Billun Backend API is running!", "status": "healthy"}

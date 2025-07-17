@@ -11,7 +11,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     role = Column(String, nullable=False)
     société = Column(String)
-    prénom = Column(String)
+    prenom = Column(String)
     nom = Column(String)
     téléphone = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)

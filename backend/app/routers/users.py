@@ -20,7 +20,7 @@ class UserCreate(BaseModel):
     utilisateur_actif: bool = True
     # French fields as expected by frontend
     nom: Optional[str] = None
-    prénom: Optional[str] = None
+    prenom: Optional[str] = None
     société: Optional[str] = None
     téléphone: Optional[str] = None
     role: str = "user"
@@ -32,14 +32,14 @@ class UserResponse(BaseModel):
     id: int
     email: str
     nom: str = ""
-    prénom: str = ""
+    prenom: str = ""
     société: str = ""
     téléphone: str = ""
     role: str
 
 class UserUpdate(BaseModel):
     nom: Optional[str] = None
-    prénom: Optional[str] = None
+    prenom: Optional[str] = None
     société: Optional[str] = None
     téléphone: Optional[str] = None
     role: Optional[str] = None
@@ -77,7 +77,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         hashed_password=hashed_password,
         role=user.role,
         nom=user.nom if user.nom is not None else "",
-        prénom=user.prénom if user.prénom is not None else "",
+        prenom=user.prenom if user.prenom is not None else "",
         société=user.société if user.société is not None else "",
         téléphone=user.téléphone if user.téléphone is not None else ""
     )
@@ -91,7 +91,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         "id": db_user.id,
         "email": db_user.email,
         "nom": db_user.nom or "",
-        "prénom": db_user.prénom or "",
+        "prenom": db_user.prenom or "",
         "société": db_user.société or "",
         "téléphone": db_user.téléphone or "",
         "role": db_user.role
@@ -132,7 +132,7 @@ def update_user(user_id: int, user: UserUpdate, db: Session = Depends(get_db)):
         "id": db_user.id,
         "email": db_user.email,
         "nom": db_user.nom or "",
-        "prénom": db_user.prénom or "",
+        "prenom": db_user.prenom or "",
         "société": db_user.société or "",
         "téléphone": db_user.téléphone or "",
         "role": db_user.role

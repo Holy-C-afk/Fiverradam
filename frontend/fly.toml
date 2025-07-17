@@ -1,0 +1,19 @@
+app = "fiverradam-frontend"
+
+[env]
+  NEXT_PUBLIC_API_URL = "https://fiverradam.fly.dev"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[[services]]
+  internal_port = 3000
+  protocol = "tcp"
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
