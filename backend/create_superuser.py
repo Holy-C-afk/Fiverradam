@@ -40,8 +40,8 @@ def create_superuser():
             return
         
         # Default superuser credentials
-        email = os.getenv("ADMIN_EMAIL", "admin@billun.com")
-        password = os.getenv("ADMIN_PASSWORD", "admin123456")
+        email = os.getenv("ADMIN_EMAIL", "Mobilun@billun.com")
+        password = os.getenv("ADMIN_PASSWORD", "admin123")
         
         # Create superuser
         hashed_password = get_password_hash(password)
@@ -49,7 +49,7 @@ def create_superuser():
             email=email,
             hashed_password=hashed_password,
             nom="Super",
-            prenom="Admin",
+            prenom="Mobilun",
             role="admin",
             is_active=True
         )
@@ -70,5 +70,42 @@ def create_superuser():
     finally:
         db.close()
 
+# ...imports et setup...
+
+def create_admin(email, password, nom, prenom, role="admin"):
+    engine = create_engine(DATABASE_URL)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    db = SessionLocal()
+    try:
+        existing = db.query(User).filter(User.email == email).first()
+        if existing:
+            print(f"Admin user already exists: {email}")
+            return
+        hashed_password = get_password_hash(password)
+        admin = User(
+            email=email,
+            hashed_password=hashed_password,
+            nom=nom,
+            prenom=prenom,
+            role=role,
+            is_active=True
+        )
+        db.add(admin)
+        db.commit()
+        db.refresh(admin)
+        print(f"✅ New admin created: {email} ({nom} {prenom})")
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
 if __name__ == "__main__":
-    create_superuser()
+    # Exemple pour créer un nouvel admin Mobilun
+    create_admin(
+        email="mobilun@billun.com",
+        password="mobilun123456",
+        nom="Mobilun",
+        prenom="Admin"
+    )
+

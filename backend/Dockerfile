@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY ./app /app/app
 COPY requirements.txt /app/requirements.txt
+COPY create_superuser.py /app/create_superuser.py
 
 RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
 
