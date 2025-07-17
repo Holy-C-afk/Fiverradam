@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for fiverradam on 2025-07-17T08:58:56Z
+# fly.toml app configuration file generated for fiverradam-mdfnyg on 2025-07-17T09:34:32Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'fiverradam'
+app = 'fiverradam-mdfnyg'
 primary_region = 'cdg'
 
 [build]
