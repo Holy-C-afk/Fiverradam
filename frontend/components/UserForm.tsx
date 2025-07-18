@@ -241,7 +241,7 @@ export default function UserForm() {
                     {user.nom}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {user.prenom}
+                    {`${user.prenom} ${user.nom}`}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {user.email}

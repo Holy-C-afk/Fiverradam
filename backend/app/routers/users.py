@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, Union
 from passlib.context import CryptContext
 from ..database import SessionLocal
@@ -27,12 +27,14 @@ class UserCreate(BaseModel):
     password: str = "defaultpassword123"  # Default password for admin creation
 
 class UserResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    
+    model_config = ConfigDict(
+      from_attributes = True,
+      allow_populate_by_names = True,
+    )
     id: int
     email: str
     nom: str = ""
-    prenom: str = ""
+    prenom: str = Field(default="",alias="prénom")
     société: str = ""
     téléphone: str = ""
     role: str

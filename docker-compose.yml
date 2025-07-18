@@ -29,6 +29,8 @@ services:
 
   frontend:
     build: ./frontend
+    environment:                     # ← add these two lines
+      - NEXT_PUBLIC_API_URL=http://109.199.105.179:8000
     ports:
       - "3001:3000"
     restart: unless-stopped

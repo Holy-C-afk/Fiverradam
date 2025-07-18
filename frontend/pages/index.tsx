@@ -18,10 +18,10 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const formData = new FormData();
-      formData.append('username', email);
-      formData.append('password', password);
-
+      const formData = new URLSearchParams({
+      username : email,
+      password : password,
+});
       const response = await api.post("/auth/token", formData, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
