@@ -39,7 +39,7 @@ apt update && apt upgrade -y
 ### Cloner le projet :
 ```bash
 cd /opt
-git clone https://github.com/Holy-C-afk/Fiverradam.git billun
+git clone https://github.com/Holy-C-afk/XXXX.git billun
 cd billun
 ```
 
